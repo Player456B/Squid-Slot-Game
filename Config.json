@@ -1,0 +1,11 @@
+{
+  "minBet": 1,
+  "maxBet": 100,
+  "theme": "squid",
+  "symbols": [
+    { "name": "mask", "image": "assets/mask.png", "payout": 20 },
+    { "name": "doll", "image": "assets/doll.png", "payout": 40 },
+    { "name": "money", "image": "assets/money.png", "payout": 100 },
+    { "name": "skull", "image": "assets/skull.png", "payout": 0 }
+  ]
+}
