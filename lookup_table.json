@@ -1,0 +1,7 @@
+{
+  "1": ["mask", "mask", "mask"],
+  "2": ["doll", "doll", "doll"],
+  "3": ["money", "money", "money"],
+  "4": ["mask", "mask", "doll"],
+  "5": ["skull", "doll", "mask"]
+}
