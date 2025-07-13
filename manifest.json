@@ -1,0 +1,7 @@
+{
+  "game": "SquidSlotSurvival",
+  "version": "1.0.0",
+  "description": "Real-money slot game with Squid Game theme",
+  "modes": ["standard"],
+  "rounds": 1
+}
