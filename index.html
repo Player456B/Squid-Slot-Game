@@ -4,7 +4,182 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Squid Slot Survival</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Orbitron', Arial, sans-serif;
+  background: #16171c;
+  color: #fff;
+  min-height: 100vh;
+}
+
+#game-container {
+  max-width: 420px;
+  margin: 24px auto;
+  background: rgba(22, 23, 28, 0.99);
+  border-radius: 20px;
+  box-shadow: 0 0 24px 4px #ff003c99;
+  padding: 24px 18px 30px 18px;
+}
+
+header h1 {
+  color: #ff003c;
+  font-size: 2.1em;
+  margin-bottom: 0.1em;
+  text-shadow: 0 0 12px #ff003c88, 0 2px 0 #000;
+  letter-spacing: 2px;
+}
+.subtitle {
+  font-size: 1em;
+  color: #c7c7c7;
+  margin-bottom: 18px;
+}
+
+.slot-reels {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #22242b;
+  border-radius: 16px;
+  padding: 16px 5px;
+  margin: 0 auto 8px auto;
+  box-shadow: 0 2px 12px #2a002d44 inset;
+  border: 2px solid #ff003c66;
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  height: 120px;
+}
+
+.reel {
+  width: 76px;
+  height: 76px;
+  margin: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1b22;
+  border-radius: 12px;
+  box-shadow: 0 0 10px #ff003c22;
+  border: 2px solid #39394d;
+  transition: border 0.17s;
+  position: relative;
+}
+
+.reel img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px #ff003c55);
+}
+
+.payline {
+  width: 90%;
+  margin: -32px auto 10px auto;
+  height: 4px;
+  background: linear-gradient(90deg, transparent 0%, #ff003c 50%, transparent 100%);
+  border-radius: 2px;
+  box-shadow: 0 0 8px #ff003c88;
+}
+
+.bet-panel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.bet-panel button {
+  background: #191a22;
+  color: #ff003c;
+  border: 2px solid #ff003c99;
+  font-size: 1.3em;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  transition: background 0.17s;
+}
+.bet-panel button:active {
+  background: #ff003c22;
+}
+
+#bet-amount {
+  font-size: 1.4em;
+  color: #fff;
+  font-weight: bold;
+  min-width: 40px;
+  text-align: center;
+}
+
+#spin-btn {
+  width: 100%;
+  padding: 16px;
+  font-size: 1.4em;
+  margin: 10px 0 0 0;
+  background: linear-gradient(90deg, #ff003c, #5f003c 70%);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 0 16px #ff003c44;
+  cursor: pointer;
+  text-shadow: 0 2px 0 #000;
+  transition: background 0.18s, box-shadow 0.18s;
+  font-family: inherit;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+#spin-btn:active {
+  background: #ff003cbb;
+  box-shadow: 0 0 6px #ff003c88;
+}
+
+#result-message {
+  min-height: 34px;
+  text-align: center;
+  margin-top: 12px;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-shadow: 0 0 9px #ff003c44;
+}
+
+.balance-panel {
+  margin-top: 18px;
+  text-align: center;
+  color: #c7c7c7;
+  font-size: 1.05em;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 600px) {
+  #game-container {
+    max-width: 99vw;
+    padding: 10px 2vw 20px 2vw;
+    border-radius: 8px;
+  }
+  .slot-reels {
+    max-width: 96vw;
+    height: 84px;
+    padding: 9px 1px;
+  }
+  .reel {
+    width: 48px;
+    height: 48px;
+    margin: 0 4px;
+  }
+  .reel img {
+    width: 38px;
+    height: 38px;
+  }
+  .payline {
+    margin: -18px auto 6px auto;
+  }
+}
+ </style>
 </head>
 <body>
   <div id="game-container">
