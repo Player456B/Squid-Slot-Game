@@ -299,6 +299,232 @@ footer {
   <audio id="win-sound" src="assets/win.mp3" preload="auto"></audio>
   <audio id="spin-sound" src="assets/spin.mp3" preload="auto"></audio>
   <audio id="bonus-sound" src="assets/bonus.mp3" preload="auto"></audio>
-  <script src="script.js"></script>
+  <script>
+// Squid Game Survival Slot - 5x4 Grid, Free Spins, Stake Static Demo
+
+// ========== SYMBOLS (replace src with your own asset paths) ==========
+const SYMBOLS = [
+  { name: "circle",  img: "assets/circle.png" },
+  { name: "triangle",img: "assets/triangle.png" },
+  { name: "square",  img: "assets/square.png" },
+  { name: "umbrella",img: "assets/umbrella.png" },
+  { name: "doll",    img: "assets/doll.png" },
+  { name: "guard",   img: "assets/guard.png" },
+  { name: "money",   img: "assets/money.png" },
+  { name: "fs",      img: "assets/free_spin.png" },    // Free spin scatter
+  { name: "player",  img: "assets/player.png" },
+  { name: "coin",    img: "assets/coin.png" },
+];
+
+const ROWS = 4, REELS = 5;
+const INITIAL_BALANCE = 20000;
+const BETS = [100, 200, 400, 1000, 2000, 5000];
+const FREE_GAME_TRIGGER = 3; // how many fs symbols for bonus
+
+let state = {
+  board: [],
+  balance: INITIAL_BALANCE,
+  betIdx: 0,
+  spinning: false,
+  freeGames: 0,
+  fsLeft: 0,
+};
+
+// ========== DOM ELEMENTS ==========
+const $ = id => document.getElementById(id);
+const slotBoard = $("slot-board");
+const betMinus = $("bet-minus"), betPlus = $("bet-plus");
+const betAmount = $("bet-amount"), balanceEl = $("balance");
+const spinBtn = $("spin-btn"), resultMsg = $("result-message");
+const buyBonus = $("buy-bonus"), fsBanner = $("free-spin-banner"), fsCount = $("free-spin-count");
+const winSound = $("win-sound"), spinSound = $("spin-sound"), bonusSound = $("bonus-sound");
+
+// ========== INIT ==========
+function preloadImages() {
+  SYMBOLS.forEach(s => { let img = new Image(); img.src = s.img; });
+}
+function drawBoard(board, winCells=[]) {
+  slotBoard.innerHTML = "";
+  for(let r=0;r<ROWS;r++) {
+    for(let c=0;c<REELS;c++) {
+      let idx = r*REELS+c;
+      let sIdx = board[r][c];
+      let cell = document.createElement("div");
+      cell.className = "symbol-cell" + (winCells.some(([rr,cc])=>rr===r&&cc===c)?" win":"");
+      let img = document.createElement("img");
+      img.src = SYMBOLS[sIdx].img;
+      img.alt = SYMBOLS[sIdx].name;
+      cell.appendChild(img);
+      slotBoard.appendChild(cell);
+    }
+  }
+}
+function updateUI() {
+  betAmount.textContent = BETS[state.betIdx];
+  balanceEl.textContent = state.balance.toLocaleString();
+  if(state.freeGames>0) {
+    fsBanner.style.display="inline-block";
+    fsCount.textContent=state.fsLeft;
+  } else {
+    fsBanner.style.display="none";
+  }
+}
+function setResult(msg,color="#fffc59") {
+  resultMsg.textContent = msg;
+  resultMsg.style.color = color;
+  resultMsg.style.textShadow = color==="red"?"0 0 6px #f00":"0 0 8px #ffe56a";
+}
+
+// ========== GAME LOGIC ==========
+function genRandomBoard() {
+  // For demo: random symbols, but more FS during bonus
+  let fsCount = 0, out = [];
+  for(let r=0;r<ROWS;r++) {
+    let row=[];
+    for(let c=0;c<REELS;c++) {
+      let idx;
+      if(state.freeGames && Math.random()<0.13) idx=7,fsCount++; // more FS in bonus
+      else idx=Math.floor(Math.random()*SYMBOLS.length-1);
+      if(idx<0) idx=0;
+      row.push(idx);
+    }
+    out.push(row);
+  }
+  // Guarantee FS trigger if buying bonus or first bonus spin
+  if(state.forceFS) {
+    let placed=0;
+    while(placed<FREE_GAME_TRIGGER) {
+      let r=Math.floor(Math.random()*ROWS),c=Math.floor(Math.random()*REELS);
+      if(out[r][c]!==7) out[r][c]=7,placed++;
+    }
+    state.forceFS=false;
+  }
+  return out;
+}
+function findWins(board) {
+  // For demo: only pay for 5-in-a-row horizontally or vertically (change as needed)
+  let wins=[];
+  // Horizontals
+  for(let r=0;r<ROWS;r++) {
+    let sym=board[r][0];
+    if(sym===7) continue; // skip FS
+    let ok=true;
+    for(let c=1;c<REELS;c++) if(board[r][c]!==sym) ok=false;
+    if(ok) for(let c=0;c<REELS;c++) wins.push([r,c]);
+  }
+  // Verticals
+  for(let c=0;c<REELS;c++) {
+    let sym=board[0][c];
+    if(sym===7) continue;
+    let ok=true;
+    for(let r=1;r<ROWS;r++) if(board[r][c]!==sym) ok=false;
+    if(ok) for(let r=0;r<ROWS;r++) wins.push([r,c]);
+  }
+  return wins;
+}
+function countFS(board) {
+  let count=0;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<REELS;c++) if(board[r][c]===7) count++;
+  return count;
+}
+function spin(replayFS=false) {
+  if(state.spinning) return;
+  if(!state.freeGames && state.balance<BETS[state.betIdx]) {
+    setResult("Insufficient balance!","red");
+    return;
+  }
+  state.spinning=true;
+  spinBtn.disabled=true;
+  setResult("SPINNING...","#fff");
+  spinSound.currentTime=0; spinSound.play();
+
+  // Deduct bet if not in free game
+  if(!state.freeGames) state.balance-=BETS[state.betIdx];
+
+  // Animate spin: show random symbols, then settle result
+  let frames=12, cur=0;
+  let anim=setInterval(()=>{
+    let tempBoard = genRandomBoard();
+    drawBoard(tempBoard);
+    cur++;
+    if(cur>=frames) {
+      clearInterval(anim);
+      // Final actual spin:
+      let board = genRandomBoard();
+      state.board = board;
+      drawBoard(board);
+      // Check for wins
+      let fs = countFS(board);
+      let wins = findWins(board);
+      let winAmt = 0;
+      if(wins.length) {
+        winSound.currentTime=0; winSound.play();
+        winAmt = BETS[state.betIdx]*5;
+        state.balance+=winAmt;
+        drawBoard(board,wins);
+        setResult("WIN! +" + winAmt,"#fffc59");
+      } else setResult(fs?"":"Try Again!","#fff");
+      // Free Spin trigger
+      if(fs>=FREE_GAME_TRIGGER && !state.freeGames) {
+        bonusSound.currentTime=0; bonusSound.play();
+        state.freeGames=8; state.fsLeft=8;
+        fsBanner.style.display="inline-block";
+        setTimeout(()=>setResult("FREE GAMES! 8 Spins","#4fff00"),400);
+      }
+      // Free Game decrement
+      if(state.freeGames) {
+        state.fsLeft--;
+        if(state.fsLeft<=0) {
+          state.freeGames=0;
+          setTimeout(()=>setResult("Bonus Over!","#ff0040"),700);
+        }
+      }
+      updateUI();
+      state.spinning=false;
+      spinBtn.disabled=false;
+    }
+  },55);
+}
+
+// ========== EVENT HANDLERS ==========
+betMinus.onclick=()=>{ if(state.spinning) return;
+  if(state.betIdx>0) state.betIdx--; updateUI();
+};
+betPlus.onclick=()=>{ if(state.spinning) return;
+  if(state.betIdx<BETS.length-1) state.betIdx++; updateUI();
+};
+spinBtn.onclick=()=>spin();
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'||e.key===' ')spin();
+});
+
+buyBonus.onclick=()=>{
+  if(state.spinning||state.freeGames) return;
+  if(state.balance<BETS[state.betIdx]*10) {
+    setResult("Not enough for bonus buy!","red"); return;
+  }
+  state.balance-=BETS[state.betIdx]*10;
+  state.forceFS=true; // guarantee FS
+  setResult("BONUS BOUGHT!","#bfff7a");
+  spin();
+  updateUI();
+};
+
+// ========== INIT ==========
+function init() {
+  preloadImages();
+  state.board=[];
+  for(let r=0;r<ROWS;r++) {
+    let row=[];
+    for(let c=0;c<REELS;c++) row.push(Math.floor(Math.random()*SYMBOLS.length));
+    state.board.push(row);
+  }
+  drawBoard(state.board);
+  updateUI();
+  setResult("Ready to play!");
+}
+init();
+    
+  </script>
 </body>
 </html>
