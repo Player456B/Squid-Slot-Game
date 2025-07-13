@@ -2,20 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Squid Slot Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Squid Slot Survival</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>🎰 Squid Slot Game</h1>
-    <div class="slot-machine">
-      <img id="reel1" src="assets/mask.png">
-      <img id="reel2" src="assets/doll.png">
-      <img id="reel3" src="assets/money.png">
-    </div>
-    <button onclick="spin()">Spin</button>
-    <p id="result"></p>
+  <div id="game-container">
+    <header>
+      <h1>Squid Slot Survival</h1>
+      <p class="subtitle">Survive the reels. Win the prize.</p>
+    </header>
+    <main>
+      <div class="slot-reels" id="slot-reels">
+        <div class="reel" id="reel-0"></div>
+        <div class="reel" id="reel-1"></div>
+        <div class="reel" id="reel-2"></div>
+      </div>
+      <div class="payline"></div>
+      <div class="bet-panel">
+        <button id="bet-minus" aria-label="Decrease Bet">-</button>
+        <span id="bet-amount">1</span>
+        <button id="bet-plus" aria-label="Increase Bet">+</button>
+      </div>
+      <button id="spin-btn">SPIN</button>
+      <div id="result-message"></div>
+      <div class="balance-panel">
+        <span>Balance: <span id="balance">1000</span></span>
+      </div>
+    </main>
   </div>
+  <audio id="win-sound" src="assets/win.mp3" preload="auto"></audio>
+  <audio id="lose-sound" src="assets/lose.mp3" preload="auto"></audio>
   <script src="script.js"></script>
 </body>
 </html>
