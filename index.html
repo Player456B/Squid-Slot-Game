@@ -4,7 +4,258 @@
   <meta charset="UTF-8">
   <title>Squid Game Survival Slots</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="style.css">
+  <style>
+:root {
+  --neon-red: #ff0040;
+  --neon-pink: #ff40ff;
+  --neon-green: #4fff00;
+  --neon-blue: #00eaff;
+  --bg-dark: #181922;
+  --panel: #23243a;
+  --jackpot: #ffb800;
+  --major: #00d6ff;
+  --mini: #8aff00;
+  --mega: #ff00b7;
+}
+
+body {
+  background: radial-gradient(ellipse at top, #2e2e4c 0%, #0d0d13 100%);
+  min-height: 100vh;
+  color: #fff;
+  font-family: 'Orbitron', Arial, sans-serif;
+  margin: 0;
+}
+
+.game-container {
+  max-width: 420px;
+  margin: 0 auto;
+  box-shadow: 0 0 32px 8px #000a;
+  border-radius: 18px;
+  background: var(--bg-dark);
+  padding: 0 0 18px 0;
+  overflow: hidden;
+}
+
+header {
+  padding: 20px 0 6px 0;
+}
+
+.jackpot-labels {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 4px;
+}
+.jackpot {
+  font-size: 0.95em;
+  font-weight: bold;
+  padding: 4px 7px;
+  border-radius: 9px;
+  text-align: center;
+  margin: 0 2px;
+  text-shadow: 0 2px 8px #0008, 0 0 2px #000;
+}
+.jackpot span { display: block; font-size: 1.1em; margin-top: 2px; }
+.jackpot.max { background: var(--jackpot); color: #222; }
+.jackpot.major { background: var(--major); color: #00273b; }
+.jackpot.mini { background: var(--mini); color: #1a2b14; }
+.jackpot.mega { background: var(--mega); color: #32001c; }
+
+.game-title {
+  text-align: center;
+  font-size: 1.4em;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: var(--neon-red);
+  text-shadow: 0 0 10px var(--neon-pink), 0 2px 0 #000;
+  margin-bottom: 4px;
+}
+
+.slot-board {
+  background: #23243a;
+  margin: 0 auto 6px auto;
+  border-radius: 14px;
+  border: 3px solid var(--neon-red);
+  box-shadow: 0 0 26px 0 var(--neon-red);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 7px;
+  width: 99%;
+  max-width: 410px;
+  height: 300px;
+  position: relative;
+  overflow: hidden;
+}
+
+.symbol-cell {
+  background: #191a2c;
+  border-radius: 10px;
+  box-shadow: 0 0 6px #ff00408c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: box-shadow 0.15s;
+  width: 100%;
+  height: 100%;
+}
+
+.symbol-cell img {
+  display: block;
+  max-width: 55px;
+  max-height: 55px;
+  margin: 0 auto;
+  filter: drop-shadow(0 0 5px var(--neon-pink));
+  user-select: none;
+  pointer-events: none;
+}
+
+.symbol-cell.win {
+  box-shadow: 0 0 18px 4px #ffe56a, 0 0 8px 2px #fff;
+  z-index: 2;
+  animation: winflasher 0.7s alternate 2;
+}
+@keyframes winflasher {
+  0% { box-shadow: 0 0 18px #ffe56a, 0 0 8px #fff; }
+  100% { box-shadow: 0 0 32px 10px #fffc59, 0 0 16px #fff; }
+}
+
+.ui-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin: 10px 0 0 0;
+  padding: 8px 0 0 0;
+}
+
+.bet-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bet-label {
+  font-size: 1.1em;
+  color: #ffe56a;
+  font-weight: bold;
+  margin: 0 3px;
+}
+#bet-amount {
+  font-size: 1.2em;
+  font-weight: bold;
+  min-width: 52px;
+  color: #fff;
+}
+
+#bet-minus, #bet-plus {
+  background: #181a2c;
+  color: var(--neon-red);
+  border: 2px solid var(--neon-red);
+  font-size: 1.5em;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+#bet-minus:active, #bet-plus:active {
+  background: var(--neon-red);
+  color: #fff;
+}
+
+.spin-btn {
+  width: 70px; height: 70px;
+  border-radius: 50%;
+  background: var(--neon-red);
+  border: 4px solid #fff;
+  box-shadow: 0 0 16px #ff004088;
+  margin: 0 18px;
+  cursor: pointer;
+  position: relative;
+  font-size: 2.6em;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.13s, box-shadow 0.13s;
+}
+.spin-btn:after {
+  content: "↻";
+  font-size: 2em;
+  font-weight: bold;
+  position: absolute;
+  left: 0; right: 0; top: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.spin-btn:active { background: #e10037; }
+
+.bonus-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.bonus-btn {
+  background: #ffc600;
+  color: #222;
+  font-weight: bold;
+  border: none;
+  border-radius: 14px;
+  padding: 8px 12px;
+  font-size: 0.98em;
+  box-shadow: 0 0 5px #ffd70088;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.bonus-btn:active { background: #ffe800; }
+
+.info-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 8px 0 0 0;
+  gap: 5px;
+}
+#result-message {
+  min-height: 22px;
+  font-size: 1.1em;
+  text-align: center;
+  color: #fffc59;
+  text-shadow: 0 0 8px #ffe56a;
+}
+.free-spin-banner {
+  color: var(--neon-green);
+  font-weight: bold;
+  background: #181a2c;
+  border: 2px solid var(--neon-green);
+  padding: 3px 12px;
+  border-radius: 11px;
+  font-size: 1.07em;
+  margin-bottom: 2px;
+  letter-spacing: 2px;
+  box-shadow: 0 0 8px #83ff62;
+  animation: fsbanner 1.5s infinite alternate;
+}
+@keyframes fsbanner {
+  to { box-shadow: 0 0 16px #bfff7a, 0 0 14px #fff; }
+}
+
+footer {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 0.92em;
+  color: #aaa;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 600px) {
+  .game-container { max-width: 99vw; }
+  .slot-board { max-width: 99vw; height: 37vw; min-height: 220px; }
+  .symbol-cell img { max-width: 9vw; max-height: 9vw; }
+  .spin-btn { width: 14vw; height: 14vw; min-width: 50px; min-height: 50px; }
+  }
+  </style>
 </head>
 <body>
   <div class="game-container">
