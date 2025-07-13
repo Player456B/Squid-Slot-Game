@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <title>Squid Game Survival Slot - Upgraded Mobile Version</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="style.css">
+  <style>
+
+    
+  </style>
 </head>
 <body>
   <div class="game-container">
@@ -44,7 +47,233 @@
   <audio id="spin-sound" src="assets/spin.mp3" preload="auto"></audio>
   <audio id="bonus-sound" src="assets/bonus.mp3" preload="auto"></audio>
   <script>
-    
+    // Squid Game Slot - Mobile Upgraded Version
+
+const SYMBOLS = [
+  { name: "circle", img: "assets/circle.png" },
+  { name: "triangle", img: "assets/triangle.png" },
+  { name: "square", img: "assets/square.png" },
+  { name: "umbrella", img: "assets/umbrella.png" },
+  { name: "doll", img: "assets/doll.png" }, // Free spin symbol
+  { name: "guard", img: "assets/guard.png" },
+  { name: "money", img: "assets/money.png" },
+  { name: "player", img: "assets/player.png" },
+  { name: "coin", img: "assets/coin.png" },
+];
+
+const ROWS = 4, REELS = 5;
+const INITIAL_BALANCE = 100.00;
+const BETS = [0.20, 0.40, 1.00, 2.00, 5.00, 10.00];
+const FREE_SPIN_TRIGGER = 4;
+const FREE_SPIN_AWARD = 8;
+
+let state = {
+  board: [],
+  balance: INITIAL_BALANCE,
+  betIdx: 0,
+  spinning: false,
+  freeGames: 0,
+  fsLeft: 0,
+  chasingFS: false,
+  chasingFSCount: 0,
+  guaranteedFS: false,
+};
+
+const $ = id => document.getElementById(id);
+const slotBoard = $("slot-board");
+const betMinus = $("bet-minus"), betPlus = $("bet-plus");
+const betAmount = $("bet-amount"), balanceEl = $("balance");
+const spinBtn = $("spin-btn"), resultMsg = $("result-message");
+const fsBanner = $("free-spin-banner"), fsCount = $("free-spin-count");
+const winSound = $("win-sound"), spinSound = $("spin-sound"), bonusSound = $("bonus-sound");
+
+function preloadImages() {
+  SYMBOLS.forEach(s => { let img = new Image(); img.src = s.img; });
+}
+function drawBoard(board, winCells=[]) {
+  slotBoard.innerHTML = "";
+  for(let r=0;r<ROWS;r++) {
+    for(let c=0;c<REELS;c++) {
+      let idx = r*REELS+c;
+      let sIdx = board[r][c];
+      let cell = document.createElement("div");
+      cell.className = "symbol-cell" + (winCells.some(([rr,cc])=>rr===r&&cc===c)?" win":"");
+      let img = document.createElement("img");
+      img.src = SYMBOLS[sIdx].img;
+      img.alt = SYMBOLS[sIdx].name;
+      cell.appendChild(img);
+      slotBoard.appendChild(cell);
+    }
+  }
+}
+function updateUI() {
+  betAmount.textContent = BETS[state.betIdx].toFixed(2);
+  balanceEl.textContent = state.balance.toFixed(2);
+  if(state.freeGames>0) {
+    fsBanner.style.display="inline-block";
+    fsCount.textContent=state.fsLeft;
+  } else {
+    fsBanner.style.display="none";
+  }
+}
+function setResult(msg,color="#ffe156") {
+  resultMsg.textContent = msg;
+  resultMsg.style.color = color;
+  resultMsg.style.textShadow = color==="red"?"0 0 2vw #f00":"0 0 1.5vw #ffe156";
+}
+
+// Game Logic
+function genRandomBoard(chasingFS=false, fsCount=0) {
+  let board = [];
+  let dolls = 0;
+  for(let r=0;r<ROWS;r++) {
+    let row=[];
+    for(let c=0;c<REELS;c++) {
+      let idx;
+      if(state.guaranteedFS && dolls < 4) {
+        idx = 4; dolls++;
+      } else if(chasingFS && fsCount===3 && c===4){
+        idx = Math.random()<0.7 ? 4 : Math.floor(Math.random()*SYMBOLS.length-1);
+        if(idx===4) dolls++;
+      } else if(chasingFS && Math.random()<0.2 && dolls<3) {
+        idx = 4; dolls++;
+      } else if(Math.random()<0.03) { // rare free spin
+        idx = 4; dolls++;
+      } else if(Math.random()<0.2 && !chasingFS) { // slow win chance
+        idx = Math.floor(Math.random()*5);
+      } else {
+        idx = Math.floor(Math.random()*SYMBOLS.length-1);
+      }
+      if(idx<0) idx=0;
+      row.push(idx);
+    }
+    board.push(row);
+  }
+  return board;
+}
+function findWins(board) {
+  // 5 in a row (horizontal or vertical)
+  let wins=[];
+  for(let r=0;r<ROWS;r++) {
+    let sym=board[r][0];
+    if(sym===4) continue; // skip doll
+    let ok=true;
+    for(let c=1;c<REELS;c++) if(board[r][c]!==sym) ok=false;
+    if(ok) for(let c=0;c<REELS;c++) wins.push([r,c]);
+  }
+  for(let c=0;c<REELS;c++) {
+    let sym=board[0][c];
+    if(sym===4) continue;
+    let ok=true;
+    for(let r=1;r<ROWS;r++) if(board[r][c]!==sym) ok=false;
+    if(ok) for(let r=0;r<ROWS;r++) wins.push([r,c]);
+  }
+  return wins;
+}
+function countDolls(board) {
+  let count=0;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<REELS;c++) if(board[r][c]===4) count++;
+  return count;
+}
+function spin() {
+  if(state.spinning) return;
+  if(!state.freeGames && state.balance<BETS[state.betIdx]) {
+    setResult("Not enough balance!","red"); return;
+  }
+  state.spinning=true;
+  spinBtn.disabled=true;
+  setResult("SPINNING...", "#fff");
+  spinSound.currentTime=0; spinSound.play();
+  if(!state.freeGames) state.balance-=BETS[state.betIdx];
+
+  let chase = state.chasingFS;
+  let chaseCount = state.chasingFSCount;
+
+  let frames = chase ? 17 : 13, cur = 0;
+  let anim = setInterval(()=>{
+    let tempBoard = genRandomBoard(chase, chaseCount);
+    drawBoard(tempBoard);
+    cur++;
+    if(cur>=frames) {
+      clearInterval(anim);
+      let board = genRandomBoard(chase, chaseCount);
+      state.board = board;
+      drawBoard(board);
+      // Dolls
+      let dolls = countDolls(board);
+      // Chasing for 4th doll
+      if(chase && chaseCount===3 && dolls>=4) {
+        state.guaranteedFS = false;
+        triggerFreeSpins();
+        updateUI();
+        setTimeout(()=>{spinBtn.disabled=false; state.spinning=false;},700);
+        return;
+      } else if(dolls===3 && !state.freeGames && Math.random()<0.33) {
+        // Start chase animation for 4th doll (rare)
+        state.chasingFS = true;
+        state.chasingFSCount = 3;
+        setResult("Almost there... Catch the 4th doll!","#ff7f50");
+        setTimeout(()=>spin(),900);
+        return;
+      } else if(dolls>=4 && !state.freeGames) {
+        triggerFreeSpins();
+      } else {
+        let wins = findWins(board);
+        let winAmt = 0;
+        if(wins.length) {
+          winSound.currentTime=0; winSound.play();
+          winAmt = BETS[state.betIdx]*5;
+          state.balance+=winAmt;
+          drawBoard(board,wins);
+          setResult("WIN! +$" + winAmt.toFixed(2),"#ffe156");
+        } else setResult(dolls?"":"Try Again!","#fff");
+        if(state.freeGames) {
+          state.fsLeft--;
+          if(state.fsLeft<=0) {
+            state.freeGames=0;
+            setTimeout(()=>setResult("Free Spins Over","#01e6c2"),900);
+          }
+        }
+      }
+      state.chasingFS = false;
+      state.chasingFSCount = 0;
+      updateUI();
+      state.spinning=false;
+      spinBtn.disabled=false;
+    }
+  },chase?55:77);
+}
+function triggerFreeSpins() {
+  bonusSound.currentTime=0; bonusSound.play();
+  state.freeGames=FREE_SPIN_AWARD;
+  state.fsLeft=FREE_SPIN_AWARD;
+  setResult("FREE SPINS! ("+FREE_SPIN_AWARD+")","#01e6c2");
+}
+
+betMinus.onclick=()=>{ if(state.spinning) return;
+  if(state.betIdx>0) state.betIdx--; updateUI();
+};
+betPlus.onclick=()=>{ if(state.spinning) return;
+  if(state.betIdx<BETS.length-1) state.betIdx++; updateUI();
+};
+spinBtn.onclick=()=>spin();
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'||e.key===' ')spin();
+});
+
+function init() {
+  preloadImages();
+  state.board=[];
+  for(let r=0;r<ROWS;r++) {
+    let row=[];
+    for(let c=0;c<REELS;c++) row.push(Math.floor(Math.random()*SYMBOLS.length));
+    state.board.push(row);
+  }
+  drawBoard(state.board);
+  updateUI();
+  setResult("Ready to play!");
+}
+init();
   </script>
 </body>
 </html>
